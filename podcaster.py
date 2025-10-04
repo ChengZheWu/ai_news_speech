@@ -1,10 +1,9 @@
-# 檔名: podcaster.py (v1.1 智慧分塊版)
-
 import database
 from google.cloud import texttospeech
 from datetime import datetime
 import os # 導入 os 模組來處理資料夾和路徑
 import re # 導入 re 模組來做更強大的文字淨化
+import boto3
 
 # 設定每個文字塊的 byte 上限，我們設 4800 來保留一些安全邊際
 BYTE_LIMIT = 4800
@@ -101,28 +100,42 @@ def main():
 
     print("所有段落語音合成完畢，正在拼接成單一檔案...")
 
-    # 5. 將所有拼接好的音檔儲存成 .mp3
-    # 1. 定義輸出資料夾名稱
-    output_folder = "podcasts"
+    # # 5. 將所有拼接好的音檔儲存成 .mp3
+    # # 1. 定義輸出資料夾名稱
+    # output_folder = "podcasts"
     
-    # 2. 檢查資料夾是否存在，如果不存在就建立
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-        print(f"已建立新的資料夾: {output_folder}")
+    # # 2. 檢查資料夾是否存在，如果不存在就建立
+    # if not os.path.exists(output_folder):
+    #     os.makedirs(output_folder)
+    #     print(f"已建立新的資料夾: {output_folder}")
 
-    # 3. 產生帶有年月日時分的檔名
-    file_timestamp = datetime.now().strftime('%Y%m%d_%H')
-    filename = f"podcast_{file_timestamp}.mp3"
+    # # 3. 產生帶有年月日時分的檔名
+    # file_timestamp = datetime.now().strftime('%Y%m%d_%H')
+    # filename = f"podcast_{file_timestamp}.mp3"
     
-    # 4. 使用 os.path.join 來組合完整的檔案路徑，這是最標準的作法
-    filepath = os.path.join(output_folder, filename)
+    # # 4. 使用 os.path.join 來組合完整的檔案路徑，這是最標準的作法
+    # filepath = os.path.join(output_folder, filename)
 
-    # 5. 使用完整的路徑來寫入檔案
-    with open(filepath, "wb") as out:
+    # # 5. 使用完整的路徑來寫入檔案
+    # with open(filepath, "wb") as out:
+    #     for audio_segment in all_audio_content:
+    #         out.write(audio_segment)
+    #     # 更新最後的成功訊息，顯示完整的路徑
+    #     print(f"\n🎉 成功！你的專屬財經 Podcast 已儲存為: {filepath}")
+
+    filename = f"podcast_{datetime.now().strftime('%Y%m%d_%H%M')}.mp3"
+    with open(filename, "wb") as out:
         for audio_segment in all_audio_content:
             out.write(audio_segment)
-        # 更新最後的成功訊息，顯示完整的路徑
-        print(f"\n🎉 成功！你的專屬財經 Podcast 已儲存為: {filepath}")
+
+    # 上傳到 S3
+    bucket_name = '你剛剛建立的 S3 儲存貯體名稱'
+    s3_client = boto3.client('s3')
+    s3_client.upload_file(filename, bucket_name, f"podcasts/{filename}")
+    print(f"🎉 Podcast 音檔已成功上傳至 S3: s3://{bucket_name}/podcasts/{filename}")
+
+    # 刪除本地暫存檔案
+    os.remove(filename)
 
 if __name__ == "__main__":
     main()

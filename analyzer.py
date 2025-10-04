@@ -4,6 +4,7 @@ import textwrap
 from datetime import datetime
 import os # 導入 os 模組來處理資料夾
 from dotenv import load_dotenv
+import boto3
 
 # --- [設定] ---
 
@@ -86,31 +87,47 @@ def main():
         print("\n分析完成，正在將報告存入知識庫...")
         database.add_summary(summary_text=ai_summary, source_article_count=len(articles))
 
+        # 本地儲存
+        # print("正在將報告儲存為 Markdown 檔案...")
+        # # 建立一個資料夾來存放報告，如果它不存在的話
+        # output_folder = "reports"
+        # if not os.path.exists(output_folder):
+        #     os.makedirs(output_folder)
+        #     print(f"已建立新的資料夾: {output_folder}")
+
+        # # 產生帶有年月日時分的檔名
+        # file_timestamp = datetime.now().strftime('%Y%m%d_%H')
+        # filename = f"summary_{file_timestamp}.md"
+        # filepath = os.path.join(output_folder, filename)
+
+        # # 寫入檔案
+        # # encoding='utf-8' 非常重要，能確保中文不會變成亂碼
+        # with open(filepath, "w", encoding="utf-8") as f:
+        #     f.write(ai_summary)
+        
+        # print(f"🎉 報告已成功儲存至: {filepath}")
+
+        # AWS雲端儲存
+        # 建立一個暫存的 .md 檔案
         print("正在將報告儲存為 Markdown 檔案...")
-        # 建立一個資料夾來存放報告，如果它不存在的話
-        output_folder = "reports"
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
-            print(f"已建立新的資料夾: {output_folder}")
-
-        # 產生帶有年月日時分的檔名
-        file_timestamp = datetime.now().strftime('%Y%m%d_%H')
-        filename = f"summary_{file_timestamp}.md"
-        filepath = os.path.join(output_folder, filename)
-
-        # 寫入檔案
-        # encoding='utf-8' 非常重要，能確保中文不會變成亂碼
-        with open(filepath, "w", encoding="utf-8") as f:
+        filename = f"summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(ai_summary)
         
-        print(f"🎉 報告已成功儲存至: {filepath}")
-        
-        # 6. 呈現分析結果
-        print("\n\n========== Gemini AI 財經摘要報告 ==========\n")
-        # 使用 textwrap 美化輸出，避免長文亂碼
-        wrapped_text = textwrap.fill(response.text, width=80)
-        print(wrapped_text)
-        print("\n==================== 報告結束 ====================")
+        # 上傳到 S3
+        bucket_name = '你剛剛建立的 S3 儲存貯體名稱'
+        s3_client = boto3.client('s3')
+        s3_client.upload_file(filename, bucket_name, f"reports/{filename}")
+        print(f"🎉 報告已成功上傳至 S3: s3://{bucket_name}/reports/{filename}")
+
+        os.remove(filename)
+
+        # # 6. 呈現分析結果
+        # print("\n\n========== Gemini AI 財經摘要報告 ==========\n")
+        # # 使用 textwrap 美化輸出，避免長文亂碼
+        # wrapped_text = textwrap.fill(response.text, width=80)
+        # print(wrapped_text)
+        # print("\n==================== 報告結束 ====================")
         
     except Exception as e:
         print(f"AI 分析過程中發生錯誤: {e}")

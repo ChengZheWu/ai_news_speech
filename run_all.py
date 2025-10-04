@@ -1,5 +1,3 @@
-# 檔名: run_all.py
-
 import subprocess
 import sys
 import database

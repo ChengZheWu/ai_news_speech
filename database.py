@@ -1,5 +1,3 @@
-# 檔名: database.py (v1.1 新增讀取功能)
-
 import sqlite3
 from datetime import datetime, timedelta
 
