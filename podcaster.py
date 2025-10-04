@@ -100,6 +100,7 @@ def main():
 
     print("所有段落語音合成完畢，正在拼接成單一檔案...")
 
+    # 本地儲存
     # # 5. 將所有拼接好的音檔儲存成 .mp3
     # # 1. 定義輸出資料夾名稱
     # output_folder = "podcasts"
@@ -128,8 +129,9 @@ def main():
         for audio_segment in all_audio_content:
             out.write(audio_segment)
 
+    # 雲端儲存
     # 上傳到 S3
-    bucket_name = '你剛剛建立的 S3 儲存貯體名稱'
+    bucket_name = 'ai-news-podcast-output-andy-1102'
     s3_client = boto3.client('s3')
     s3_client.upload_file(filename, bucket_name, f"podcasts/{filename}")
     print(f"🎉 Podcast 音檔已成功上傳至 S3: s3://{bucket_name}/podcasts/{filename}")

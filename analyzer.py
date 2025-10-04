@@ -115,7 +115,7 @@ def main():
             f.write(ai_summary)
         
         # 上傳到 S3
-        bucket_name = '你剛剛建立的 S3 儲存貯體名稱'
+        bucket_name = 'ai-news-podcast-output-andy-1102'
         s3_client = boto3.client('s3')
         s3_client.upload_file(filename, bucket_name, f"reports/{filename}")
         print(f"🎉 報告已成功上傳至 S3: s3://{bucket_name}/reports/{filename}")
