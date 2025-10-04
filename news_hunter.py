@@ -3,6 +3,7 @@ import database
 
 # 導入其他必要的函式庫
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
@@ -77,7 +78,17 @@ def main():
 
     print(f"啟動情報員，目標鎖定過去 {HOURS_TO_FETCH} 小時的新聞...")
     try:
-        driver = webdriver.Chrome()
+        # --- [啟動無頭模式] ---
+        chrome_options = Options()
+        # "--headless=new" 是 Selenium 4 之後啟動無頭模式的標準寫法
+        chrome_options.add_argument("--headless=new")
+        # 以下參數是為了在 Docker/Linux 環境中增加穩定性，避免權限問題
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu") # 在無頭環境下，通常建議關閉 GPU 加速
+        
+        # 將設定好的 options 傳給 Chrome
+        driver = webdriver.Chrome(options=chrome_options)
     except Exception as e:
         print(f"啟動 Selenium 失敗: {e}")
         return
