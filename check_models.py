@@ -1,9 +1,18 @@
 # 檔名: check_models.py
 
 import google.generativeai as genai
+import os
+from dotenv import load_dotenv
 
-# !!! 在這裡貼上你 analyzer.py 裡面用的同一組 API KEY !!!
-GOOGLE_API_KEY = ''
+# 1. 載入 .env 檔案中的環境變數
+load_dotenv()
+
+# 2. 從環境變數中讀取 API Key
+api_key = os.getenv("GOOGLE_API_KEY")
+
+# 3. 檢查是否成功讀取到 Key
+if not api_key:
+  print("錯誤：找不到 GOOGLE_API_KEY。請確認你的專案底下有 .env 檔案，並且裡面有 GOOGLE_API_KEY='...' 的設定。")
 
 try:
     genai.configure(api_key=GOOGLE_API_KEY)

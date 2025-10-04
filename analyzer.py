@@ -3,20 +3,29 @@ import google.generativeai as genai
 import textwrap
 from datetime import datetime
 import os # 導入 os 模組來處理資料夾
+from dotenv import load_dotenv
 
 # --- [設定] ---
-# 警告：請勿將你的 API Key 直接上傳到公開的程式碼倉庫 (如 GitHub)
-# 最好是使用環境變數等方式來保護它
-GOOGLE_API_KEY = ''
 
 # 我們要分析過去幾小時的新聞
-HOURS_TO_ANALYZE = 8
+HOURS_TO_ANALYZE = 12
 
 def main():
+    # 1. 載入 .env 檔案中的環境變數
+    load_dotenv()
+    
+    # 2. 從環境變數中讀取 API Key
+    api_key = os.getenv("GOOGLE_API_KEY")
+    
+    # 3. 檢查是否成功讀取到 Key
+    if not api_key:
+        print("錯誤：找不到 GOOGLE_API_KEY。請確認你的專案底下有 .env 檔案，並且裡面有 GOOGLE_API_KEY='...' 的設定。")
+        return
+
     """AI 分析師的主程式"""
     # 1. 設定 AI 熱線
     try:
-        genai.configure(api_key=GOOGLE_API_KEY)
+        genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-flash-latest')
     except Exception as e:
         print(f"AI 設定失敗，請檢查你的 API Key 是否正確。錯誤訊息: {e}")
