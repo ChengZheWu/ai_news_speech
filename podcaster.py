@@ -9,6 +9,18 @@ import re # 導入 re 模組來做更強大的文字淨化
 # 設定每個文字塊的 byte 上限，我們設 4800 來保留一些安全邊際
 BYTE_LIMIT = 4800
 
+def setup_gcp_credentials():
+    gcp_json_content = os.getenv("GCP_CREDENTIALS_JSON")
+    if gcp_json_content:
+        # 如果環境變數存在 (在雲端環境)
+        temp_credentials_path = "gcp_credentials_temp.json"
+        with open(temp_credentials_path, "w") as f:
+            f.write(gcp_json_content)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_credentials_path
+        print("已從環境變數載入 GCP 憑證。")
+    # 如果環境變數不存在，程式會依賴本地設定的 set GOOGLE_APPLICATION_CREDENTIALS=...
+    # 這讓程式碼在本機和雲端都能運作！
+
 def create_text_chunks(text):
     """將長文本切分成多個小於 byte 上限的塊"""
     chunks = []
@@ -42,6 +54,8 @@ def create_text_chunks(text):
     return chunks
 
 def main():
+    setup_gcp_credentials()
+
     """AI 播音員的主程式"""
     print("--- AI 播音員啟動 ---")
     
