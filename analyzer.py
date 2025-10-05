@@ -1,57 +1,49 @@
+# 檔名: analyzer.py
+
 import database
 import google.generativeai as genai
 import textwrap
 from datetime import datetime
-import os # 導入 os 模組來處理資料夾
+import os
 from dotenv import load_dotenv
 import boto3
 
-# --- [設定] ---
+S3_BUCKET_NAME = 'ai-news-podcast-output-andy-1102'
 
-# 我們要分析過去幾小時的新聞
-HOURS_TO_ANALYZE = 12
+def upload_to_s3(file_path, bucket_name, object_name):
+    s3_client = boto3.client('s3')
+    try:
+        s3_client.upload_file(file_path, bucket_name, object_name)
+        print(f"檔案已成功上傳至 S3: s3://{bucket_name}/{object_name}")
+        return True
+    except Exception as e:
+        print(f"S3 上傳失敗: {e}")
+        return False
 
 def main():
-    # 1. 載入 .env 檔案中的環境變數
     load_dotenv()
-    
-    # 2. 從環境變數中讀取 API Key
     api_key = os.getenv("GOOGLE_API_KEY")
-    
-    # 3. 檢查是否成功讀取到 Key
     if not api_key:
-        print("錯誤：找不到 GOOGLE_API_KEY。請確認你的專案底下有 .env 檔案，並且裡面有 GOOGLE_API_KEY='...' 的設定。")
-        return
+        print("錯誤：找不到 GOOGLE_API_KEY 環境變數。"); return
 
-    """AI 分析師的主程式"""
-    # 1. 設定 AI 熱線
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-flash-latest')
     except Exception as e:
-        print(f"AI 設定失敗，請檢查你的 API Key 是否正確。錯誤訊息: {e}")
-        return
+        print(f"AI 設定失敗: {e}"); return
 
-    print(f"AI 分析師已上線，正在從知識庫調閱過去 {HOURS_TO_ANALYZE} 小時的情報...")
-
-    # 2. 從圖書館借書 (讀取資料庫)
+    print("AI 分析師已上線，正在調閱所有情報...")
     articles = database.get_all_articles_for_analysis()
-
     if not articles:
-        print("知識庫中沒有符合時間範圍的新聞可供分析。")
-        return
+        print("知識庫中沒有新聞可供分析。"); return
 
     print(f"成功調閱 {len(articles)} 篇新聞，正在整理成報告...")
-
-    # 3. 把所有書的內容整理成一份報告 (合併內文)
     full_text_content = ""
     for article in articles:
-        full_text_content += f"--- 新聞標題: {article['headline']} ---\n"
-        full_text_content += f"{article['content']}\n\n"
+        full_text_content += f"--- 新聞標題: {article['headline']} ---\n{article['content']}\n\n"
 
-    # 4. 擬定簡報指南 (設計 Prompt)
     prompt = f"""
-    你是一位頂尖的台灣股市財經分析師。你的任務是閱讀以下所有從網路爬取來的過去 {HOURS_TO_ANALYZE} 小時內的財經新聞。
+    你是一位頂尖的台灣股市財經分析師。你的任務是閱讀以下所有從網路爬取來的財經新聞。
 
     ---
     寫作規則:
@@ -60,7 +52,8 @@ def main():
     你的報告應該直接從主標題或「摘要」開始。
     有日期的話，請用中文格式，例如:10月16號，不要寫10/16。
     不要出現沒必要的重複翻譯中文的英文。
-    請在文章的最後一句話寫"本文為AI生成重點新聞整理與分析，僅供參考，謝謝收聽"
+    請在文章的第一句話寫"大家好，以下為12小時內新聞重點摘要"
+    請在文章的最後一句話寫"本集內容由 AI 自動生成，資訊來源為 Yahoo 股市及各大財經媒體，不構成任何投資建議，僅供參考，謝謝收聽"
     ---
 
     請基於這些資訊，為我提供一份全面、深入的市場動態摘要報告。
@@ -76,62 +69,29 @@ def main():
     --- 以下為新聞全文 ---
     {full_text_content}
     """
-
-    # 5. 把報告交給 AI 顧問，並等待回覆
-    print("報告已發送給 Gemini AI 顧問，請稍候，分析需要一點時間...")
+    
+    print("報告已發送給 Gemini AI，分析需要一點時間...")
     try:
         response = model.generate_content(prompt)
         ai_summary = response.text
-
-        # 在印出報告之前，先把它存到資料庫！
+        
         print("\n分析完成，正在將報告存入知識庫...")
         database.add_summary(summary_text=ai_summary, source_article_count=len(articles))
-
-        # 本地儲存
-        # print("正在將報告儲存為 Markdown 檔案...")
-        # # 建立一個資料夾來存放報告，如果它不存在的話
-        # output_folder = "reports"
-        # if not os.path.exists(output_folder):
-        #     os.makedirs(output_folder)
-        #     print(f"已建立新的資料夾: {output_folder}")
-
-        # # 產生帶有年月日時分的檔名
-        # file_timestamp = datetime.now().strftime('%Y%m%d_%H')
-        # filename = f"summary_{file_timestamp}.md"
-        # filepath = os.path.join(output_folder, filename)
-
-        # # 寫入檔案
-        # # encoding='utf-8' 非常重要，能確保中文不會變成亂碼
-        # with open(filepath, "w", encoding="utf-8") as f:
-        #     f.write(ai_summary)
         
-        # print(f"🎉 報告已成功儲存至: {filepath}")
-
-        # AWS雲端儲存
-        # 建立一個暫存的 .md 檔案
-        print("正在將報告儲存為 Markdown 檔案...")
-        filename = f"summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        # 產出 .md 檔案並上傳到 S3
+        file_timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+        filename = f"summary_{file_timestamp}.md"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(ai_summary)
         
-        # 上傳到 S3
-        bucket_name = 'ai-news-podcast-output-andy-1102'
-        s3_client = boto3.client('s3')
-        s3_client.upload_file(filename, bucket_name, f"reports/{filename}")
-        print(f"🎉 報告已成功上傳至 S3: s3://{bucket_name}/reports/{filename}")
+        upload_to_s3(filename, S3_BUCKET_NAME, f"reports/{filename}")
+        os.remove(filename) # 上傳後刪除本地暫存檔
 
-        os.remove(filename)
-
-        # # 6. 呈現分析結果
-        # print("\n\n========== Gemini AI 財經摘要報告 ==========\n")
-        # # 使用 textwrap 美化輸出，避免長文亂碼
-        # wrapped_text = textwrap.fill(response.text, width=80)
-        # print(wrapped_text)
-        # print("\n==================== 報告結束 ====================")
-        
+        print("\n\n========== Gemini AI 財經摘要報告 ========== \n")
+        print(textwrap.fill(ai_summary.replace('*', ''), width=80))
+        print("\n==================== 報告結束 ====================")
     except Exception as e:
-        print(f"AI 分析過程中發生錯誤: {e}")
-
+        print(f"AI 分析或存檔過程中發生錯誤: {e}")
 
 if __name__ == "__main__":
     main()
