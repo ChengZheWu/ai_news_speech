@@ -79,7 +79,7 @@ def main():
         database.add_summary(summary_text=ai_summary, source_article_count=len(articles))
         
         # 產出 .md 檔案並上傳到 S3
-        file_timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+        file_timestamp = datetime.now().strftime('%Y%m%d_%H')
         filename = f"summary_{file_timestamp}.md"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(ai_summary)

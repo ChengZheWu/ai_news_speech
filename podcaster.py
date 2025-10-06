@@ -62,7 +62,7 @@ def main():
     if not all([speech_key, speech_region]):
         print("錯誤：缺少 AZURE_SPEECH_KEY 或 AZURE_SPEECH_REGION 環境變數。"); return
 
-    file_timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+    file_timestamp = datetime.now().strftime('%Y%m%d_%H')
     filename = f"podcast_{file_timestamp}.mp3"
     
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
