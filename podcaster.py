@@ -67,7 +67,7 @@ def main():
     
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
     audio_config = speechsdk.audio.AudioOutputConfig(filename=filename)
-    voice_name = "zh-TW-HsiaoChenNeural"
+    voice_name = "zh-TW-YunJheNeural"
     speech_config.speech_synthesis_voice_name = voice_name
     speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
