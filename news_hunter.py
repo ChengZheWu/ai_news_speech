@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, timezone
 import re
 import requests
-import os
 
 # --- [全域常數] ---
 HOURS_TO_FETCH = 3
@@ -167,7 +166,6 @@ def main():
     
     # 精準過濾的時間窗口，也從同一個 time_window 計算
     new_articles_count = 0
-    article_check_count = 0 # 新增一個計數器，用於檔名編號
     
     for news in news_to_process:
         publish_time, content = scrape_article_details(news['url'])
@@ -177,31 +175,6 @@ def main():
 
             article_check_count += 1
             formatted_time = publish_time.strftime('%Y-%m-%d %H:%M')
-            
-            # A. 輸出到螢幕
-            print("\n" + "="*50)
-            print(f"【內文檢查 #{article_check_count}】時間: {formatted_time}")
-            print(f"標題: {news['headline']}")
-            print("--- [內文開始] ---")
-            # 由於內文可能很長，我們只列印前 300 個字元
-            print(content[:300] + ('...' if len(content) > 300 else '')) 
-            print("--- [內文結束] ---")
-
-            # B. 儲存到 TXT 檔案
-            # 建立一個唯一的檔名，避免覆蓋
-            safe_headline = "".join(c for c in news['headline'] if c.isalnum() or c in (' ', '.', '_')).rstrip()
-            filename = f"article_{article_check_count}_{safe_headline[:30]}.txt"
-            
-            try:
-                with open(filename, 'w', encoding='utf-8') as f:
-                    f.write(f"時間: {formatted_time}\n")
-                    f.write(f"標題: {news['headline']}\n")
-                    f.write(f"URL: {news['url']}\n\n")
-                    f.write("="*50 + "\n")
-                    f.write(content)
-                print(f"⭐ 完整內文已儲存至：{filename}")
-            except Exception as file_error:
-                print(f"❌ 儲存檔案失敗: {file_error}")
             
             article_data = {
                 "headline": news['headline'],
