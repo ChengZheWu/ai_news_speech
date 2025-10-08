@@ -58,10 +58,13 @@ def scrape_article_details(url):
             publish_time = datetime.fromisoformat(iso_timestamp.replace('Z', '+00:00'))
 
         # 2. 抓取內文
-        article_body = soup.select_one('div.caas-body')
+        article_body = soup.select_one('div.atoms')
         if article_body:
             paragraphs = [p.text for p in article_body.find_all('p')]
             content = "\n".join(paragraphs)
+
+        if content == "內文抓取失敗或格式不符。":
+            print("內文抓取失敗或格式不符。")
             
         return publish_time, content
 
@@ -136,7 +139,7 @@ def main():
                     break
         
         if last_news_time and last_news_time < time_window:
-            print("偵測到最舊新聞已超出8小時範圍，停止滾動。")
+            print(f"偵測到最舊新聞已超出 {HOURS_TO_FETCH} 小時範圍，停止滾動。")
             break
 
     print("\n滾動完畢，擷取最終 HTML 原始碼！")
