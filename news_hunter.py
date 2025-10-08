@@ -11,7 +11,7 @@ import re
 import requests
 
 # --- [全域常數] ---
-HOURS_TO_FETCH = 3
+HOURS_TO_FETCH = 12
 
 # --- [函數定義區] ---
 
@@ -62,9 +62,6 @@ def scrape_article_details(url):
         if article_body:
             paragraphs = [p.text for p in article_body.find_all('p')]
             content = "\n".join(paragraphs)
-
-        if content == "內文抓取失敗或格式不符。":
-            print("內文抓取失敗或格式不符。")
             
         return publish_time, content
 
@@ -172,10 +169,6 @@ def main():
         
         # 這裡現在是兩個 aware time 在做比較，非常精準
         if publish_time and content and publish_time >= time_window:
-
-            article_check_count += 1
-            formatted_time = publish_time.strftime('%Y-%m-%d %H:%M')
-            
             article_data = {
                 "headline": news['headline'],
                 "url": news['url'],
@@ -185,6 +178,8 @@ def main():
             }
             formatted_time = article_data['datetime'].strftime('%Y-%m-%d %H:%M')
             print(f"Time:{formatted_time}\nheadline:{article_data['headline']}")
+            if content == "內文抓取失敗或格式不符。":
+                print("內文抓取失敗或格式不符。")
             if database.add_article(article_data):
                 new_articles_count += 1
     
