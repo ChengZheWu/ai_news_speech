@@ -51,7 +51,7 @@ def scrape_article_details(url):
         publish_time = None
         content = ""
 
-        # 1. 抓取精確時間 (通常在 <time> 標籤的 datetime 屬性中)
+        # 抓取精確時間 (通常在 <time> 標籤的 datetime 屬性中)
         time_tag = soup.select_one('time[datetime]')
         if time_tag:
             iso_timestamp = time_tag['datetime']
@@ -59,7 +59,7 @@ def scrape_article_details(url):
             # Z 代表 UTC+0，我們把它轉成 +00:00 讓 Python 能解析
             publish_time = datetime.fromisoformat(iso_timestamp.replace('Z', '+00:00'))
 
-        # 2. 抓取內文
+        # 抓取內文
         article_body = soup.select_one('article')
         if article_body:
             paragraphs = [p.text for p in article_body.find_all('p')]
@@ -114,7 +114,7 @@ def main():
             driver.get(url)
             time.sleep(3)
 
-            # 2. 智慧滾動邏輯 (現在也使用 UTC 基準)
+            # 智慧滾動邏輯 (現在也使用 UTC 基準)
             print("開始智慧滾動...")
             # 滾動用的時間窗口，也從 now_utc 計算
             time_window = now_utc - timedelta(hours=HOURS_TO_FETCH)
@@ -150,11 +150,11 @@ def main():
                 if new_height == last_height:
                     print("已達頁面底部，進行最終條件檢查...")
 
-                    # 1. 取得當前頁面上所有新聞的列表
+                    # 取得當前頁面上所有新聞的列表
                     final_news_items = temp_soup.select('#YDC-Stream-Proxy li')
                     article_count = len(final_news_items)
 
-                    # 2. 取得最舊與最新的新聞時間
+                    # 取得最舊與最新的新聞時間
                     oldest_time = last_news_time # last_news_time 是我們在迴圈中持續更新的最舊時間
                     newest_time = None
                     
@@ -171,12 +171,12 @@ def main():
                                         break # 找到第一個就跳出
                             if newest_time: break
                     
-                    # 3. 計算時間跨度 (小時)
+                    # 計算時間跨度 (小時)
                     time_span_hours = 0
                     if newest_time and oldest_time:
                         time_span_hours = (newest_time - oldest_time).total_seconds() / 3600
 
-                    # 4. 應用你的新條件來判斷是否真的失敗
+                    # 應用你的新條件來判斷是否真的失敗
                     # 如果文章數少於20篇 且 時間跨度小於(HOURS_TO_FETCH / 2)小時，才視為滾動失敗
                     if article_count < 20 and time_span_hours < (HOURS_TO_FETCH // 2):
                         print(f"滾動失敗：已達頁面底部，但條件不滿足 (文章數: {article_count}/20, 時間跨度: {time_span_hours:.2f}/6 小時)。")
@@ -210,7 +210,6 @@ def main():
     # 3. 處理資料：使用統一的 UTC 時間基準進行精準過濾
     soup = BeautifulSoup(page_source, 'html.parser')
     news_to_process = []
-    # ... (收集 URL 和標題的邏輯不變) ...
     for item in soup.select('#YDC-Stream-Proxy li'):
         headline_tag = item.select_one('h3 a')
         if headline_tag and headline_tag.get('href'):

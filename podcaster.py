@@ -30,7 +30,6 @@ def upload_to_s3(file_path, bucket_name, object_name):
         return False
 
 def create_text_chunks(text):
-    # (函數維持不變)
     chunks, current_chunk = [], ""
     sentences = text.replace('\n', '。').replace('！', '。').replace('？', '。').split('。')
     for sentence in sentences:
@@ -46,7 +45,6 @@ def create_text_chunks(text):
 
 def main():
     load_dotenv()
-    # setup_gcp_credentials() # 如果用Google TTS才需要
     
     print("--- AI 播音員 (Azure 版) 啟動 ---")
     latest_summary = database.get_latest_summary()
