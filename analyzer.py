@@ -4,6 +4,7 @@ import database
 import google.generativeai as genai
 import textwrap
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 from dotenv import load_dotenv
 import boto3
@@ -79,7 +80,8 @@ def main():
         database.add_summary(summary_text=ai_summary, source_article_count=len(articles))
         
         # 產出 .md 檔案並上傳到 S3
-        file_timestamp = datetime.now().strftime('%Y%m%d_%H')
+        tz_taipei = ZoneInfo("Asia/Taipei")
+        file_timestamp = datetime.now(tz_taipei).strftime('%Y%m%d_%H')
         filename = f"summary_{file_timestamp}.md"
         with open(filename, "w", encoding="utf-8") as f:
             f.write(ai_summary)

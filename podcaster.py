@@ -1,5 +1,6 @@
 import database
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 import re
 from dotenv import load_dotenv
@@ -60,7 +61,8 @@ def main():
     if not all([speech_key, speech_region]):
         print("錯誤：缺少 AZURE_SPEECH_KEY 或 AZURE_SPEECH_REGION 環境變數。"); return
 
-    file_timestamp = datetime.now().strftime('%Y%m%d_%H')
+    tz_taipei = ZoneInfo("Asia/Taipei")
+    file_timestamp = datetime.now(tz_taipei).strftime('%Y%m%d_%H')
     filename = f"podcast_{file_timestamp}.mp3"
     
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
