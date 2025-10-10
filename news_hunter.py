@@ -107,6 +107,7 @@ def main():
             driver = webdriver.Chrome(options=chrome_options)
         except Exception as e:
             print(f"啟動 Selenium 失敗: {e}")
+            sys.exit(1) # 使用非 0 的 exit code 代表錯誤
             return
 
         try:
@@ -174,12 +175,12 @@ def main():
                     # 計算時間跨度 (小時)
                     time_span_hours = 0
                     if newest_time and oldest_time:
-                        time_span_hours = (newest_time - oldest_time).total_seconds() / 3600
+                        time_span_hours = (newest_time - oldest_time).total_seconds() // 3600
 
                     # 應用你的新條件來判斷是否真的失敗
                     # 如果文章數少於20篇 且 時間跨度小於(HOURS_TO_FETCH / 2)小時，才視為滾動失敗
                     if article_count < 20 and time_span_hours < (HOURS_TO_FETCH // 2):
-                        print(f"滾動失敗：已達頁面底部，但條件不滿足 (文章數: {article_count}/20, 時間跨度: {time_span_hours:.2f}/6 小時)。")
+                        print(f"滾動失敗：已達頁面底部，但條件不滿足 (文章數: {article_count}/20, 時間跨度: {time_span_hours:.2f}/{HOURS_TO_FETCH // 2} 小時)。")
                         # scrolling_successful 保持為 False
                     else:
                         print(f"滾動成功：雖未達12小時，但文章數({article_count})及時間跨度({time_span_hours:.2f}小時)滿足最低要求，視為正常。")
@@ -231,7 +232,7 @@ def main():
 
         if not publish_time or not content:
             print(f"\n[FATAL ERROR] 無法抓取文章 '{news['headline']}' 的完整內容。程式終止。")
-            sys.exit(1) # 報錯，終止整個腳本
+            sys.exit(1) # 使用非 0 的 exit code 代表錯誤
         
         # 這裡現在是兩個 aware time 在做比較，非常精準
         if publish_time and content and publish_time >= time_window:
@@ -252,7 +253,7 @@ def main():
     print("\n--- 任務報告 ---")
     if new_articles_count == 0:
         print(f"[FATAL ERROR] 處理了 {len(news_to_process)} 個目標，但沒有任何一篇符合條件或為新文章。可能出現問題，程式終止。")
-        sys.exit(1)
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
     print(f"✔️ 本次新增 {new_articles_count} 篇符合精準時間的新文章到知識庫。")
 
 # --- [程式總開關] ---

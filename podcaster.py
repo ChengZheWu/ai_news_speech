@@ -6,6 +6,7 @@ import re
 from dotenv import load_dotenv
 import azure.cognitiveservices.speech as speechsdk
 import boto3
+import sys
 
 S3_BUCKET_NAME = 'ai-news-podcast-output-andy-1102'
 BYTE_LIMIT = 15000
@@ -50,7 +51,9 @@ def main():
     print("--- AI 播音員 (Azure 版) 啟動 ---")
     latest_summary = database.get_latest_summary()
     if not latest_summary:
-        print("錯誤：資料庫中找不到任何分析報告。"); return
+        print("錯誤：資料庫中找不到任何分析報告。")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
+        return
     summary_text = latest_summary['summary_text']
     print("成功讀取報告，準備進行語音合成...")
 
@@ -59,34 +62,40 @@ def main():
     speech_key = os.getenv("AZURE_SPEECH_KEY")
     speech_region = os.getenv("AZURE_SPEECH_REGION")
     if not all([speech_key, speech_region]):
-        print("錯誤：缺少 AZURE_SPEECH_KEY 或 AZURE_SPEECH_REGION 環境變數。"); return
+        print("錯誤：缺少 AZURE_SPEECH_KEY 或 AZURE_SPEECH_REGION 環境變數。")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
+        return
 
-    tz_taipei = ZoneInfo("Asia/Taipei")
-    file_timestamp = datetime.now(tz_taipei).strftime('%Y%m%d_%H')
-    filename = f"podcast_{file_timestamp}.mp3"
-    
-    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
-    audio_config = speechsdk.audio.AudioOutputConfig(filename=filename)
-    voice_name = "zh-TW-YunJheNeural"
-    speech_config.speech_synthesis_voice_name = voice_name
-    speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
+    try:
+        tz_taipei = ZoneInfo("Asia/Taipei")
+        file_timestamp = datetime.now(tz_taipei).strftime('%Y%m%d_%H')
+        filename = f"podcast_{file_timestamp}.mp3"
+        
+        speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+        audio_config = speechsdk.audio.AudioOutputConfig(filename=filename)
+        voice_name = "zh-TW-YunJheNeural"
+        speech_config.speech_synthesis_voice_name = voice_name
+        speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
-    text_chunks = create_text_chunks(cleaned_text)
-    print(f"報告已切分成 {len(text_chunks)} 段落，準備使用聲音 '{voice_name}' 進行合成...")
-    for i, chunk in enumerate(text_chunks):
-        print(f"  - 正在合成第 {i+1}/{len(text_chunks)} 段語音...")
-        result = speech_synthesizer.speak_text_async(chunk).get()
-        if result.reason == speechsdk.ResultReason.Canceled:
-            cancellation_details = result.cancellation_details
-            print(f"語音合成被取消: {cancellation_details.reason}")
-            if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                print(f"錯誤詳情: {cancellation_details.error_details}")
-            return
-    
-    print("\n所有段落語音合成完畢！")
-    
-    upload_to_s3(filename, S3_BUCKET_NAME, f"podcasts/{filename}")
-    os.remove(filename)
+        text_chunks = create_text_chunks(cleaned_text)
+        print(f"報告已切分成 {len(text_chunks)} 段落，準備使用聲音 '{voice_name}' 進行合成...")
+        for i, chunk in enumerate(text_chunks):
+            print(f"  - 正在合成第 {i+1}/{len(text_chunks)} 段語音...")
+            result = speech_synthesizer.speak_text_async(chunk).get()
+            if result.reason == speechsdk.ResultReason.Canceled:
+                cancellation_details = result.cancellation_details
+                print(f"語音合成被取消: {cancellation_details.reason}")
+                if cancellation_details.reason == speechsdk.CancellationReason.Error:
+                    print(f"錯誤詳情: {cancellation_details.error_details}")
+                return
+        
+        print("\n所有段落語音合成完畢！")
+        
+        upload_to_s3(filename, S3_BUCKET_NAME, f"podcasts/{filename}")
+        os.remove(filename)
+    except Exception as e:
+        print(f"AI 轉podcast或存檔過程中發生錯誤: {e}")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
 
 if __name__ == "__main__":
     main()

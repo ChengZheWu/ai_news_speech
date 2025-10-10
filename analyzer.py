@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 import os
 from dotenv import load_dotenv
 import boto3
+import sys
 
 S3_BUCKET_NAME = 'ai-news-podcast-output-andy-1102'
 
@@ -25,18 +26,24 @@ def main():
     load_dotenv()
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        print("錯誤：找不到 GOOGLE_API_KEY 環境變數。"); return
+        print("錯誤：找不到 GOOGLE_API_KEY 環境變數。")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
+        return
 
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-flash-latest')
     except Exception as e:
-        print(f"AI 設定失敗: {e}"); return
+        print(f"AI 設定失敗: {e}")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
+        return
 
     print("AI 分析師已上線，正在調閱所有情報...")
     articles = database.get_all_articles_for_analysis()
     if not articles:
-        print("知識庫中沒有新聞可供分析。"); return
+        print("知識庫中沒有新聞可供分析。")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
+        return
 
     print(f"成功調閱 {len(articles)} 篇新聞，正在整理成報告...")
     full_text_content = ""
@@ -94,6 +101,7 @@ def main():
         print("\n==================== 報告結束 ====================")
     except Exception as e:
         print(f"AI 分析或存檔過程中發生錯誤: {e}")
+        sys.exit(1) # 使用非 0 的 exit code 代表錯誤
 
 if __name__ == "__main__":
     main()
